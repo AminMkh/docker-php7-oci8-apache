@@ -1,0 +1,19 @@
+web:
+  container_name: wodlab_web
+  build: .
+  ports:
+    - "80:80"
+  volumes:
+    - ./src:/var/www/html/
+    - ./conf/apache:/etc/apache2/sites-enabled/
+    - ./conf/php:/usr/local/etc/php/
+
+#db:
+#  container_name: wodlab_db
+#  image: sath89/oracle-xe-11g
+#  volumes:
+#    - ./db:/u01/app/oracle
+
+#  ports:
+#    - "1521:1521"
+##    - "8080:8080"
