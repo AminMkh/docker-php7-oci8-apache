@@ -6,5 +6,5 @@ web:
   volumes:
     - ./src:/var/www/html/
     - ./conf/apache:/etc/apache2/sites-enabled/
-    - ./conf/php:/usr/local/etc/php/
+    # - ./conf/php:/usr/local/etc/php/
 

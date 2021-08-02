@@ -1,4 +1,4 @@
-FROM php:7.1-apache
+FROM php:8-apache
 
 MAINTAINER Amin Mkh <mukh_amin@yahoo.com> 
 
@@ -10,13 +10,13 @@ RUN apt-get update \
 # PHP extensions
 RUN \
     docker-php-ext-configure pdo_mysql --with-pdo-mysql=mysqlnd \
-    && docker-php-ext-configure mysqli --with-mysqli=mysqlnd \
-    && docker-php-ext-install pdo_mysql \
-    && docker-php-ext-install mbstring \
-    && docker-php-ext-install mcrypt
+    && docker-php-ext-configure mysqli \
+    && docker-php-ext-install pdo_mysql
+    # && docker-php-ext-install mcrypt
 
 # xdebug, if you want to debug
-RUN pecl install xdebug
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
 
 # PHP composer
 RUN curl -sS https://getcomposer.org/installer | php --  --install-dir=/usr/bin --filename=composer
@@ -26,19 +26,24 @@ RUN ln -s /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled/rew
 
 # Oracle instantclient
 
-	# copy oracle files
-ADD oracle/instantclient-basic-linux.x64-12.1.0.2.0.zip /tmp/
-ADD oracle/instantclient-sdk-linux.x64-12.1.0.2.0.zip /tmp/
-ADD oracle/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip /tmp/
+# copy oracle files
+# ADD oracle/instantclient-basic-linux.x64-12.1.0.2.0.zip /tmp/
+ADD https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-basic-linux.x64-21.1.0.0.0.zip /tmp/
+# ADD oracle/instantclient-sdk-linux.x64-12.1.0.2.0.zip /tmp/
+ADD https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-sdk-linux.x64-21.1.0.0.0.zip /tmp/
+# ADD oracle/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip /tmp/
+ADD https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-sqlplus-linux.x64-21.1.0.0.0.zip /tmp/
+
 # unzip them
-RUN unzip /tmp/instantclient-basic-linux.x64-12.1.0.2.0.zip -d /usr/local/ \
-    && unzip /tmp/instantclient-sdk-linux.x64-12.1.0.2.0.zip -d /usr/local/ \
-    && unzip /tmp/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip -d /usr/local/
-# install pecl
-RUN curl -O http://pear.php.net/go-pear.phar \
-    ; /usr/local/bin/php -d detect_unicode=0 go-pear.phar
+RUN unzip /tmp/instantclient-basic-linux.x64-*.zip -d /usr/local/ \
+    && unzip /tmp/instantclient-sdk-linux.x64-*.zip -d /usr/local/ \
+    && unzip /tmp/instantclient-sqlplus-linux.x64-*.zip -d /usr/local/
+
 # install oci8
-RUN ln -s /usr/local/instantclient_12_1 /usr/local/instantclient \
-    && ln -s /usr/local/instantclient/libclntsh.so.12.1 /usr/local/instantclient/libclntsh.so \
-    && ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus \
-    && echo 'instantclient,/usr/local/instantclient' | pecl install oci8
+RUN ln -s /usr/local/instantclient_*_1 /usr/local/instantclient \
+    && ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus 
+
+RUN docker-php-ext-configure oci8 --with-oci8=instantclient,/usr/local/instantclient \
+    && docker-php-ext-install oci8 \
+    && echo /usr/local/instantclient/ > /etc/ld.so.conf.d/oracle-insantclient.conf \
+    && ldconfig
